@@ -92,7 +92,7 @@ export default function AppLayout({ children }) {
         <footer className="bg-dark-900/80 backdrop-blur-md border-t border-purple-500/20 mt-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex justify-between items-center text-gray-400 text-sm">
-              <p>&copy; 2024 TestSpec Studio. AI-powered test generation.</p>
+              <p>&copy; {new Date().getFullYear()} TestSpec Studio. AI-powered test generation.</p>
               <div className="flex space-x-4">
                 <Link to="/privacy" className="hover:text-neon-purple transition">
                   Privacy Policy

@@ -45,7 +45,7 @@ Acceptance Criteria:
 
         <div className="mb-6">
           <label htmlFor="framework" className="block text-sm font-medium text-gray-300 mb-2">
-            ⚙️ Automation Framework
+            ⚙️ Testing Framework / Language
           </label>
           <select
             id="framework"
@@ -54,8 +54,35 @@ Acceptance Criteria:
             className="w-full px-4 py-2 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             disabled={loading}
           >
-            <option value="playwright">Playwright</option>
-            <option value="jest">Jest</option>
+            <optgroup label="JavaScript/TypeScript">
+              <option value="playwright">Playwright (E2E)</option>
+              <option value="cypress">Cypress (E2E)</option>
+              <option value="jest">Jest (Unit/Integration)</option>
+              <option value="mocha">Mocha (Unit/Integration)</option>
+              <option value="jasmine">Jasmine (Unit/BDD)</option>
+            </optgroup>
+            <optgroup label="Python">
+              <option value="pytest">Pytest</option>
+              <option value="selenium-python">Selenium (Python)</option>
+            </optgroup>
+            <optgroup label="Java">
+              <option value="selenium-java">Selenium (Java)</option>
+              <option value="junit">JUnit 5</option>
+              <option value="testng">TestNG</option>
+            </optgroup>
+            <optgroup label="C#/.NET">
+              <option value="nunit">NUnit</option>
+              <option value="xunit">xUnit</option>
+              <option value="selenium-csharp">Selenium (C#)</option>
+            </optgroup>
+            <optgroup label="Ruby">
+              <option value="rspec">RSpec</option>
+              <option value="capybara">Capybara (E2E)</option>
+            </optgroup>
+            <optgroup label="API Testing">
+              <option value="rest-assured">REST Assured (Java)</option>
+              <option value="postman">Postman/Newman</option>
+            </optgroup>
           </select>
         </div>
 
