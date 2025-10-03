@@ -6,6 +6,7 @@ import WorkspacePage from './pages/WorkspacePage'
 import LoginPage from './pages/LoginPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
+import AccountPage from './pages/AccountPage'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -36,6 +37,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <WorkspacePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
                 </ProtectedRoute>
               }
             />

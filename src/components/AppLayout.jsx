@@ -32,6 +32,9 @@ export default function AppLayout({ children }) {
                   <Link to="/workspace" className="text-gray-300 hover:text-neon-purple transition">
                     Workspace
                   </Link>
+                  <Link to="/account" className="text-gray-300 hover:text-neon-purple transition">
+                    Account
+                  </Link>
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-400">{user.email}</span>
                     <button

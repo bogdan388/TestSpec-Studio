@@ -43,8 +43,29 @@ export const AuthProvider = ({ children }) => {
     return data
   }
 
+  const signInWithEmail = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) throw error
+    return data
+  }
+
+  const signUpWithEmail = async (email, password) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/workspace`,
+      },
+    })
+    if (error) throw error
+    return data
+  }
+
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
+    const { error} = await supabase.auth.signOut()
     if (error) throw error
   }
 
@@ -52,6 +73,8 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     signOut,
   }
 

@@ -1,10 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
-  const { user, signInWithGoogle, loading } = useAuth()
+  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail, loading } = useAuth()
   const navigate = useNavigate()
+  const [mode, setMode] = useState('signin') // 'signin' or 'signup'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -16,7 +21,27 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
     } catch (error) {
-      console.error('Error logging in:', error.message)
+      setError(error.message)
+    }
+  }
+
+  const handleEmailAuth = async (e) => {
+    e.preventDefault()
+    setError('')
+    setAuthLoading(true)
+
+    try {
+      if (mode === 'signin') {
+        await signInWithEmail(email, password)
+        navigate('/workspace')
+      } else {
+        await signUpWithEmail(email, password)
+        setError('Check your email for confirmation link!')
+      }
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setAuthLoading(false)
     }
   }
 
@@ -29,21 +54,93 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-4xl font-extrabold text-gray-900">
-            TestSpec Studio
+          <h2 className="mt-6 text-center text-4xl font-extrabold text-white neon-text">
+            ⚡ TestSpec Studio
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to access your test generation history
+          <p className="mt-2 text-center text-sm text-gray-300">
+            {mode === 'signin' ? 'Sign in to your account' : 'Create your account'}
           </p>
         </div>
 
         <div className="mt-8 space-y-6">
+          {/* Email/Password Form */}
+          <div className="bg-dark-800/60 backdrop-blur-md rounded-lg shadow-neon border border-purple-500/30 p-6">
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full px-4 py-2 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-900/30 border border-red-500/30 text-red-200 px-3 py-2 rounded text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold py-3 px-6 rounded-lg transition shadow-neon disabled:opacity-50"
+              >
+                {authLoading ? 'Loading...' : mode === 'signin' ? '🚀 Sign In' : '✨ Create Account'}
+              </button>
+            </form>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => {
+                  setMode(mode === 'signin' ? 'signup' : 'signin')
+                  setError('')
+                }}
+                className="text-sm text-purple-400 hover:text-purple-300"
+              >
+                {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-purple-500/30"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-dark-900 text-gray-400">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign In */}
           <button
             onClick={handleGoogleLogin}
-            className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition"
+            className="group relative w-full flex justify-center py-3 px-4 border border-purple-500/30 text-sm font-medium rounded-lg text-white bg-dark-800/60 hover:bg-dark-700 backdrop-blur-md transition shadow-neon"
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
@@ -68,11 +165,11 @@ export default function LoginPage() {
 
           <div className="text-center text-xs text-gray-500">
             By signing in, you agree to our{' '}
-            <a href="/terms" className="text-primary hover:underline">
+            <a href="/terms" className="text-purple-400 hover:underline">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" className="text-primary hover:underline">
+            <a href="/privacy" className="text-purple-400 hover:underline">
               Privacy Policy
             </a>
           </div>
