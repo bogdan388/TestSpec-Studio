@@ -18,22 +18,35 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check active sessions
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-      // Track session if user is logged in (non-blocking)
-      if (session?.user && session?.access_token) {
-        try {
-          await trackSession(session.user.id, session.access_token)
-        } catch (error) {
-          console.error('Session tracking error:', error)
+        if (error) {
+          console.error('Auth error:', error)
+          setUser(null)
+          setLoading(false)
+          return
         }
+
+        console.log('Session restored:', session ? 'Yes' : 'No')
+        setUser(session?.user ?? null)
+        setLoading(false)
+
+        // Track session if user is logged in (non-blocking)
+        if (session?.user && session?.access_token) {
+          trackSession(session.user.id, session.access_token).catch(err => {
+            console.error('Session tracking error:', err)
+          })
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error)
+        setUser(null)
+        setLoading(false)
       }
-    }).catch(error => {
-      console.error('Auth error:', error)
-      setLoading(false)
-    })
+    }
+
+    initAuth()
 
     // Listen for auth changes
     const {
