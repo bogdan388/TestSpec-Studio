@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { useState, useEffect } from 'react'
-import { checkProductAccess } from './services/adminService'
+import { ProductAccessProvider, useProductAccess } from './contexts/ProductAccessContext'
 import AppLayout from './components/AppLayout'
 import LandingPage from './pages/LandingPage'
 import WorkspacePage from './pages/WorkspacePage'
@@ -28,19 +27,7 @@ function ProtectedRoute({ children }) {
 
 function ProductAccessRoute({ children }) {
   const { user, loading } = useAuth()
-  const [hasAccess, setHasAccess] = useState(null)
-  const [checking, setChecking] = useState(true)
-
-  useEffect(() => {
-    const checkAccess = async () => {
-      if (user) {
-        const access = await checkProductAccess(user.id)
-        setHasAccess(access)
-      }
-      setChecking(false)
-    }
-    checkAccess()
-  }, [user])
+  const { hasAccess, checking } = useProductAccess()
 
   if (loading || checking) {
     return (
@@ -64,41 +51,43 @@ function ProductAccessRoute({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/product-info" element={<ProductInfoPage />} />
-            <Route
-              path="/workspace"
-              element={
-                <ProductAccessRoute>
-                  <WorkspacePage />
-                </ProductAccessRoute>
-              }
-            />
-            <Route
-              path="/account"
-              element={
-                <ProtectedRoute>
-                  <AccountPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </AppLayout>
-      </Router>
+      <ProductAccessProvider>
+        <Router>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/product-info" element={<ProductInfoPage />} />
+              <Route
+                path="/workspace"
+                element={
+                  <ProductAccessRoute>
+                    <WorkspacePage />
+                  </ProductAccessRoute>
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <ProtectedRoute>
+                    <AccountPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </AppLayout>
+        </Router>
+      </ProductAccessProvider>
     </AuthProvider>
   )
 }

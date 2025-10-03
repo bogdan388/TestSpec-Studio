@@ -147,6 +147,11 @@ export default function AdminDashboardEnhanced() {
     if (result.success) {
       setMessage({ type: 'success', text: 'Product access granted successfully' })
       await loadData()
+
+      // Update selected user with new access status
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser({ ...selectedUser, hasProductAccess: true })
+      }
     } else {
       setMessage({ type: 'error', text: result.error })
     }
@@ -163,6 +168,11 @@ export default function AdminDashboardEnhanced() {
     if (result.success) {
       setMessage({ type: 'success', text: 'Product access revoked successfully' })
       await loadData()
+
+      // Update selected user with new access status
+      if (selectedUser && selectedUser.id === userId) {
+        setSelectedUser({ ...selectedUser, hasProductAccess: false })
+      }
     } else {
       setMessage({ type: 'error', text: result.error })
     }

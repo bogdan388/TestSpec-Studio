@@ -1,21 +1,20 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { checkIsAdmin, checkProductAccess } from '../services/adminService'
+import { useProductAccess } from '../contexts/ProductAccessContext'
+import { checkIsAdmin } from '../services/adminService'
 
 export default function AppLayout({ children }) {
   const { user, signOut } = useAuth()
+  const { hasAccess: hasProductAccess } = useProductAccess()
   const location = useLocation()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [hasProductAccess, setHasProductAccess] = useState(false)
 
   useEffect(() => {
     if (user) {
       checkIsAdmin().then(setIsAdmin)
-      checkProductAccess(user.id).then(setHasProductAccess)
     } else {
       setIsAdmin(false)
-      setHasProductAccess(false)
     }
   }, [user])
 
