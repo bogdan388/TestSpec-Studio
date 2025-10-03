@@ -18,14 +18,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check active sessions
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
 
-      // Track session if user is logged in
+      // Track session if user is logged in (non-blocking)
       if (session?.user && session?.access_token) {
-        trackSession(session.user.id, session.access_token)
+        try {
+          await trackSession(session.user.id, session.access_token)
+        } catch (error) {
+          console.error('Session tracking error:', error)
+        }
       }
+    }).catch(error => {
+      console.error('Auth error:', error)
+      setLoading(false)
     })
 
     // Listen for auth changes
@@ -34,9 +41,13 @@ export const AuthProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
 
-      // Track session on sign in
+      // Track session on sign in (non-blocking)
       if (session?.user && session?.access_token) {
-        await trackSession(session.user.id, session.access_token)
+        try {
+          await trackSession(session.user.id, session.access_token)
+        } catch (error) {
+          console.error('Session tracking error:', error)
+        }
       }
     })
 
