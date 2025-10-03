@@ -16,7 +16,8 @@ export default function WorkspacePage() {
     setStreamingTests([])
 
     try {
-      const response = await fetch('/.netlify/functions/generate-tests', {
+      // Start fetching in the background
+      const fetchPromise = fetch('/.netlify/functions/generate-tests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,16 +25,25 @@ export default function WorkspacePage() {
         body: JSON.stringify({ story, framework }),
       })
 
+      // Show first loading indicator immediately
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      const response = await fetchPromise
+
       if (!response.ok) {
         throw new Error('Failed to generate tests')
       }
 
       const data = await response.json()
 
-      // Simulate streaming by displaying tests one by one
+      // Display tests one by one immediately after receiving response
       if (data.manualTests && data.manualTests.length > 0) {
-        for (let i = 0; i < data.manualTests.length; i++) {
-          await new Promise(resolve => setTimeout(resolve, 300))
+        // Show first test immediately
+        setStreamingTests([data.manualTests[0]])
+
+        // Show rest with small delays
+        for (let i = 1; i < data.manualTests.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 150))
           setStreamingTests(prev => [...prev, data.manualTests[i]])
         }
       }
@@ -62,7 +72,8 @@ export default function WorkspacePage() {
       {loading && streamingTests.length === 0 && (
         <div className="mt-8 text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="mt-4 text-gray-600">Generating test suite...</p>
+          <p className="mt-4 text-gray-600">Analyzing your story and generating test cases...</p>
+          <p className="mt-2 text-sm text-gray-500">This may take 10-20 seconds</p>
         </div>
       )}
 
