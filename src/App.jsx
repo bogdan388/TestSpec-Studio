@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import AccountPage from './pages/AccountPage'
+import AdminDashboard from './pages/AdminDashboard'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -45,6 +46,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />

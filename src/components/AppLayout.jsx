@@ -1,9 +1,20 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { checkIsAdmin } from '../services/adminService'
 
 export default function AppLayout({ children }) {
   const { user, signOut } = useAuth()
   const location = useLocation()
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (user) {
+      checkIsAdmin().then(setIsAdmin)
+    } else {
+      setIsAdmin(false)
+    }
+  }, [user])
 
   const handleSignOut = async () => {
     try {
@@ -35,6 +46,11 @@ export default function AppLayout({ children }) {
                   <Link to="/account" className="text-gray-300 hover:text-neon-purple transition">
                     Account
                   </Link>
+                  {isAdmin && (
+                    <Link to="/admin" className="text-yellow-400 hover:text-yellow-300 transition font-semibold">
+                      🛡️ Admin
+                    </Link>
+                  )}
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-400">{user.email}</span>
                     <button
