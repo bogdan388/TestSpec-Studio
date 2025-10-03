@@ -31,21 +31,21 @@ export const trackSession = async (userId, sessionToken) => {
     const deviceInfo = getDeviceInfo()
 
     // Check if session already exists
-    const { data: existingSession } = await supabase
+    const { data: existingSessions, error: fetchError } = await supabase
       .from('user_sessions')
       .select('id')
       .eq('session_token', sessionToken)
-      .single()
+      .limit(1)
 
-    if (existingSession) {
+    if (existingSessions && existingSessions.length > 0) {
       // Update existing session
       await supabase
         .from('user_sessions')
         .update({ last_active: new Date().toISOString() })
-        .eq('id', existingSession.id)
+        .eq('id', existingSessions[0].id)
     } else {
       // Create new session
-      await supabase
+      const { error: insertError } = await supabase
         .from('user_sessions')
         .insert({
           user_id: userId,
@@ -53,6 +53,10 @@ export const trackSession = async (userId, sessionToken) => {
           device_info: deviceInfo,
           last_active: new Date().toISOString()
         })
+
+      if (insertError) {
+        console.error('Error inserting session:', insertError)
+      }
     }
   } catch (error) {
     console.error('Error tracking session:', error)
