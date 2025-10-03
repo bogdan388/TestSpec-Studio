@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useProductAccess } from '../contexts/ProductAccessContext'
 import { checkIsAdmin } from '../services/adminService'
+import AccessStatusBanner from './AccessStatusBanner'
 
 export default function AppLayout({ children }) {
   const { user, signOut } = useAuth()
@@ -30,6 +31,7 @@ export default function AppLayout({ children }) {
 
   return (
     <div className="min-h-screen flex flex-col test-pattern">
+      <AccessStatusBanner />
       <header className="bg-dark-900/80 backdrop-blur-md border-b border-purple-500/20 shadow-neon">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
