@@ -185,25 +185,28 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <HistorySidebar
-        onSelectHistory={handleSelectHistory}
-        currentHistoryId={currentHistoryId}
-        onNewChat={handleNewChat}
-        onRefresh={historyRefreshRef}
-      />
+    <div className="flex flex-col md:flex-row h-screen">
+      {/* Mobile-friendly sidebar - hidden on mobile by default */}
+      <div className="hidden md:block">
+        <HistorySidebar
+          onSelectHistory={handleSelectHistory}
+          currentHistoryId={currentHistoryId}
+          onNewChat={handleNewChat}
+          onRefresh={historyRefreshRef}
+        />
+      </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-purple-500/20">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-white neon-text">
-              🚀 Test Suite Generator
+        <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 border-b border-purple-500/20">
+          <div className="flex justify-between items-center gap-2">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-white neon-text truncate">
+              🚀 Test Suite
             </h1>
             {results && (
-              <div className="flex space-x-2">
+              <div className="flex space-x-1 sm:space-x-2">
                 <button
                   onClick={() => setViewMode('split')}
-                  className={`px-4 py-2 rounded-lg transition ${
+                  className={`hidden lg:block px-3 sm:px-4 py-2 rounded-lg transition text-sm ${
                     viewMode === 'split'
                       ? 'bg-purple-600 text-white'
                       : 'bg-dark-700/50 text-gray-400 hover:text-white'
@@ -213,39 +216,40 @@ export default function WorkspacePage() {
                 </button>
                 <button
                   onClick={() => setViewMode('chat')}
-                  className={`px-4 py-2 rounded-lg transition ${
+                  className={`px-2 sm:px-3 md:px-4 py-2 rounded-lg transition text-xs sm:text-sm ${
                     viewMode === 'chat'
                       ? 'bg-purple-600 text-white'
                       : 'bg-dark-700/50 text-gray-400 hover:text-white'
                   }`}
                 >
-                  💬 Chat
+                  💬 <span className="hidden sm:inline">Chat</span>
                 </button>
                 <button
                   onClick={() => setViewMode('results')}
-                  className={`px-4 py-2 rounded-lg transition ${
+                  className={`px-2 sm:px-3 md:px-4 py-2 rounded-lg transition text-xs sm:text-sm ${
                     viewMode === 'results'
                       ? 'bg-purple-600 text-white'
                       : 'bg-dark-700/50 text-gray-400 hover:text-white'
                   }`}
                 >
-                  📋 Results
+                  📋 <span className="hidden sm:inline">Results</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex-1 overflow-hidden px-2 sm:px-3 md:px-4 lg:px-8 py-2 sm:py-3 md:py-4">
           {error && (
-            <div className="mb-4 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg backdrop-blur-md">
+            <div className="mb-4 bg-red-900/50 border border-red-500 text-red-200 px-3 sm:px-4 py-2 sm:py-3 rounded-lg backdrop-blur-md text-sm">
               <p className="font-semibold">Error:</p>
-              <p>{error}</p>
+              <p className="text-xs sm:text-sm">{error}</p>
             </div>
           )}
 
+          {/* Split view - only on desktop */}
           {viewMode === 'split' && (
-            <div className="grid grid-cols-2 gap-4 h-full">
+            <div className="hidden lg:grid lg:grid-cols-2 gap-4 h-full">
               <div className="overflow-hidden">
                 <ChatInterface
                   messages={messages}
@@ -273,16 +277,20 @@ export default function WorkspacePage() {
             </div>
           )}
 
-          {viewMode === 'chat' && (
-            <ChatInterface
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              loading={loading}
-              framework={framework}
-              onFrameworkChange={handleFrameworkChange}
-            />
+          {/* Chat view */}
+          {(viewMode === 'chat' || (viewMode === 'split' && window.innerWidth < 1024)) && (
+            <div className="h-full">
+              <ChatInterface
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                loading={loading}
+                framework={framework}
+                onFrameworkChange={handleFrameworkChange}
+              />
+            </div>
           )}
 
+          {/* Results view */}
           {viewMode === 'results' && results && (
             <div className="h-full overflow-y-auto">
               <ResultsTabs results={results} />

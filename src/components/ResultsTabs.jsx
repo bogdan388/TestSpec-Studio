@@ -37,13 +37,13 @@ export default function ResultsTabs({ results }) {
 
   return (
     <div className="bg-dark-800/60 backdrop-blur-md rounded-lg shadow-neon border border-purple-500/30 overflow-hidden">
-      <div className="border-b border-purple-500/30">
-        <nav className="flex -mb-px">
+      <div className="border-b border-purple-500/30 overflow-x-auto">
+        <nav className="flex -mb-px min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`py-4 px-6 text-sm font-medium transition ${
+              className={`py-3 sm:py-4 px-3 sm:px-4 md:px-6 text-xs sm:text-sm font-medium transition whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-b-2 border-purple-500 text-purple-400'
                   : 'text-gray-400 hover:text-gray-300 hover:border-purple-500/50'
@@ -55,7 +55,7 @@ export default function ResultsTabs({ results }) {
         </nav>
       </div>
 
-      <div className="p-6">
+      <div className="p-3 sm:p-4 md:p-6">
         {activeTab === 'manual' && (
           <div className="space-y-4 animate-fadeIn">
             {results.manualTests?.map((test, index) => (
