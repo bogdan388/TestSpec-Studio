@@ -26,6 +26,14 @@ export default function ChatInterface({
     }
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
+    }
+    // Shift+Enter will create a new line naturally
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-200px)]">
       {/* Framework Selector */}
@@ -133,22 +141,24 @@ export default function ChatInterface({
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="bg-dark-800/60 backdrop-blur-md rounded-lg shadow-neon border border-purple-500/30 p-4">
         <div className="flex space-x-4">
-          <input
-            type="text"
+          <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Describe your test requirements or ask for changes..."
-            className="flex-1 px-4 py-3 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500"
+            onKeyDown={handleKeyDown}
+            placeholder="Describe your test requirements or ask for changes... (Shift+Enter for new line)"
+            className="flex-1 px-4 py-3 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 resize-none"
+            rows={3}
             disabled={loading}
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg transition-all shadow-neon disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg transition-all shadow-neon disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:shadow-none self-end"
           >
             {loading ? '⚡ Generating...' : '🚀 Send'}
           </button>
         </div>
+        <p className="text-xs text-gray-500 mt-2">Press Enter to send, Shift+Enter for new line</p>
       </form>
     </div>
   )

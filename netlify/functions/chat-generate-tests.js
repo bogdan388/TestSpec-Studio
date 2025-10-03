@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { generateAutomationSkeleton, generateMarkdown, generateCSV } from './utils/testGenerator.js'
+import { generateAutomationSkeleton, generateMarkdown, generateCSV, generateCucumber } from './utils/testGenerator.js'
 
 export async function handler(event) {
   if (event.httpMethod !== 'POST') {
@@ -37,14 +37,17 @@ export async function handler(event) {
     // Generate export formats
     const markdown = generateMarkdown(manualTests)
     const csv = generateCSV(manualTests)
+    const cucumber = generateCucumber(manualTests)
 
     const response = {
       manualTests,
       automationSkeletons,
+      cucumber,
       framework,
       exports: {
         markdown,
         csv,
+        cucumber,
         zipUrl: null,
       },
       message: getAssistantMessage(manualTests)

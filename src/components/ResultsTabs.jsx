@@ -7,6 +7,7 @@ export default function ResultsTabs({ results }) {
 
   const tabs = [
     { id: 'manual', label: 'Manual Test Cases' },
+    { id: 'cucumber', label: 'Cucumber/Gherkin' },
     { id: 'automation', label: 'Automation Skeletons' },
     { id: 'preview', label: 'Preview Bundle' },
   ]
@@ -37,6 +38,15 @@ export default function ResultsTabs({ results }) {
             {results.manualTests?.map((test) => (
               <ManualCaseCard key={test.id} test={test} />
             ))}
+          </div>
+        )}
+
+        {activeTab === 'cucumber' && (
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Cucumber/Gherkin Feature File
+            </h3>
+            <CodeBlock code={results.cucumber || results.exports?.cucumber} language="gherkin" />
           </div>
         )}
 

@@ -290,6 +290,34 @@ export function generateCSV(testCases) {
   return csv
 }
 
+export function generateCucumber(testCases) {
+  let feature = `Feature: Test Suite\n`
+  feature += `  As a QA engineer\n`
+  feature += `  I want to execute comprehensive test scenarios\n`
+  feature += `  So that I can ensure the application works correctly\n\n`
+
+  testCases.forEach((testCase) => {
+    // Convert test title to scenario name
+    feature += `  Scenario: ${testCase.title}\n`
+
+    // Add steps with Gherkin keywords
+    testCase.steps.forEach((step, index) => {
+      let keyword = 'And'
+      if (index === 0) {
+        keyword = 'Given'
+      } else if (index === testCase.steps.length - 1) {
+        keyword = 'When'
+      }
+      feature += `    ${keyword} ${step}\n`
+    })
+
+    // Add expected result as Then statement
+    feature += `    Then ${testCase.expected}\n\n`
+  })
+
+  return feature
+}
+
 // Additional framework generators
 
 function generateCypressSkeleton(testCases) {
