@@ -93,13 +93,13 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-140px)]">
+    <div className="flex">
       <HistorySidebar
         onSelectHistory={handleSelectHistory}
         currentHistoryId={currentHistoryId}
       />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-4xl font-bold text-white mb-8 neon-text">
             🚀 Test Suite Generator
