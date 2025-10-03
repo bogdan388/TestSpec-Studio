@@ -53,13 +53,13 @@ export const ProductAccessProvider = ({ children }) => {
     recheckAccess()
   }, [recheckAccess])
 
-  // Poll for access changes every 1 second for real-time updates
+  // Poll for access changes every 10 seconds
   useEffect(() => {
     if (!user) return
 
     const interval = setInterval(() => {
       recheckAccess()
-    }, 1000) // Check every 1 second for immediate updates
+    }, 10000) // Check every 10 seconds
 
     return () => clearInterval(interval)
   }, [user, recheckAccess])
