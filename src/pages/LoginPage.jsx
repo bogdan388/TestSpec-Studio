@@ -32,7 +32,10 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signin') {
-        await signInWithEmail(email, password)
+        const result = await signInWithEmail(email, password)
+        console.log('Sign in result:', result)
+        // Wait a bit for session to persist
+        await new Promise(resolve => setTimeout(resolve, 100))
         navigate('/workspace')
       } else {
         await signUpWithEmail(email, password)
