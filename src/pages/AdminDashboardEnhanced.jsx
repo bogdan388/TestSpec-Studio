@@ -11,7 +11,9 @@ import {
   banUser,
   unbanUser,
   sendPasswordReset,
-  deleteUserData
+  deleteUserData,
+  grantProductAccess,
+  revokeProductAccess
 } from '../services/adminService'
 
 export default function AdminDashboardEnhanced() {
@@ -129,6 +131,38 @@ export default function AdminDashboardEnhanced() {
       setMessage({ type: 'success', text: 'User data deleted successfully' })
       await loadData()
       setSelectedUser(null)
+    } else {
+      setMessage({ type: 'error', text: result.error })
+    }
+    setActionLoading(false)
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
+
+  const handleGrantAccess = async (userId) => {
+    if (!confirm('Grant product access to this user?')) return
+
+    setActionLoading(true)
+    const result = await grantProductAccess(userId)
+
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Product access granted successfully' })
+      await loadData()
+    } else {
+      setMessage({ type: 'error', text: result.error })
+    }
+    setActionLoading(false)
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+  }
+
+  const handleRevokeAccess = async (userId) => {
+    if (!confirm('Revoke product access from this user? They will no longer be able to use the workspace.')) return
+
+    setActionLoading(true)
+    const result = await revokeProductAccess(userId)
+
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Product access revoked successfully' })
+      await loadData()
     } else {
       setMessage({ type: 'error', text: result.error })
     }
@@ -289,8 +323,46 @@ export default function AdminDashboardEnhanced() {
                 </div>
               )}
 
+              {/* Product Access Status */}
+              <div className={`border rounded-lg p-4 mb-6 ${
+                selectedUser.hasProductAccess
+                  ? 'bg-green-900/20 border-green-500/30'
+                  : 'bg-orange-900/20 border-orange-500/30'
+              }`}>
+                <p className={`font-semibold ${
+                  selectedUser.hasProductAccess ? 'text-green-200' : 'text-orange-200'
+                }`}>
+                  Product Access: {selectedUser.hasProductAccess ? '✅ Enabled' : '🔒 Disabled'}
+                </p>
+                <p className={`text-sm mt-1 ${
+                  selectedUser.hasProductAccess ? 'text-green-300' : 'text-orange-300'
+                }`}>
+                  {selectedUser.hasProductAccess
+                    ? 'User can access the workspace and generate tests'
+                    : 'User cannot access the workspace - will see product info page'}
+                </p>
+              </div>
+
               {/* Actions */}
               <div className="grid grid-cols-2 gap-4 mb-6">
+                {selectedUser.hasProductAccess ? (
+                  <button
+                    onClick={() => handleRevokeAccess(selectedUser.id)}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition disabled:opacity-50"
+                  >
+                    🔒 Revoke Access
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleGrantAccess(selectedUser.id)}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition disabled:opacity-50"
+                  >
+                    ✅ Grant Access
+                  </button>
+                )}
+
                 {selectedUser.isBanned ? (
                   <button
                     onClick={() => handleUnbanUser(selectedUser.id)}

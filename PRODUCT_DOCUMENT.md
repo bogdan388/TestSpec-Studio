@@ -1,6 +1,6 @@
 # TestSpec Studio - Product Documentation
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Last Updated:** January 2025
 **Document Type:** Product Feature Documentation
 
@@ -11,13 +11,14 @@
 1. [Product Overview](#product-overview)
 2. [Core Features](#core-features)
 3. [User Roles & Permissions](#user-roles--permissions)
-4. [Authentication System](#authentication-system)
-5. [Test Generation Features](#test-generation-features)
-6. [Admin Dashboard](#admin-dashboard)
-7. [User Account Management](#user-account-management)
-8. [Export & Download Features](#export--download-features)
-9. [Technical Architecture](#technical-architecture)
-10. [Security & Privacy](#security--privacy)
+4. [Product Access Control](#product-access-control)
+5. [Authentication System](#authentication-system)
+6. [Test Generation Features](#test-generation-features)
+7. [Admin Dashboard](#admin-dashboard)
+8. [User Account Management](#user-account-management)
+9. [Export & Download Features](#export--download-features)
+10. [Technical Architecture](#technical-architecture)
+11. [Security & Privacy](#security--privacy)
 
 ---
 
@@ -136,6 +137,101 @@ TestSpec Studio is an AI-powered test case generation platform that transforms u
 - Super Admin dashboard at `/admin`
 - Requires `super_admin` role in database
 - Protected by authentication and role checks
+
+---
+
+## Product Access Control
+
+### Overview
+
+TestSpec Studio includes granular product access control that allows administrators to enable or disable workspace access for individual users. This feature is essential for managing product licenses, trial periods, or restricting access to specific users.
+
+### How It Works
+
+**Access States**:
+- **Enabled**: User can access the workspace and generate tests
+- **Disabled**: User is redirected to Product Info page explaining features
+
+**User Experience**:
+- Users without access see a comprehensive product information page
+- Page describes all features, use cases, and benefits
+- Clear call-to-action to contact administrator for access
+- Navigation shows "Get Access" instead of "Workspace" link
+
+### Admin Controls
+
+**Grant Access**:
+- Click "✅ Grant Access" button in user details panel
+- User immediately gains workspace access
+- Action is logged in activity history
+- User notification (if configured)
+
+**Revoke Access**:
+- Click "🔒 Revoke Access" button in user details panel
+- User loses workspace access immediately
+- Redirected to Product Info page on next workspace visit
+- Action is logged with timestamp and admin ID
+
+**Access Status Indicator**:
+- Green badge: ✅ Product Access Enabled
+- Orange badge: 🔒 Product Access Disabled
+- Displayed prominently in user details panel
+- Shows current access state and implications
+
+### Product Info Page
+
+**Features**:
+- Complete product overview with benefits
+- Feature grid showcasing capabilities
+- Use case scenarios for different user types
+- Step-by-step "How It Works" guide
+- Key benefits highlighted
+- Perfect for demos and onboarding
+
+**Content Sections**:
+1. **Hero Section**: Value proposition and main features
+2. **Features Grid**: 6 key features with icons and descriptions
+3. **Perfect For**: Target audience and use cases
+4. **How It Works**: 4-step process explanation
+5. **Key Benefits**: Bullet-point list of advantages
+6. **CTA**: Call-to-action to request access
+
+### Database Structure
+
+**product_access Table**:
+```sql
+- user_id: UUID (unique, references auth.users)
+- has_access: BOOLEAN (default false)
+- granted_at: TIMESTAMP
+- granted_by: UUID (admin who granted access)
+- revoked_at: TIMESTAMP
+- revoked_by: UUID (admin who revoked access)
+- notes: TEXT (optional notes)
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+```
+
+### Use Cases
+
+**Trial Management**:
+- Grant temporary access to trial users
+- Easily revoke when trial expires
+- Track who has active access
+
+**License Management**:
+- Control seat allocation
+- Manage paid vs free tiers
+- Enforce user limits
+
+**Selective Rollout**:
+- Beta test with specific users
+- Gradual feature rollout
+- A/B testing capabilities
+
+**Access Restriction**:
+- Temporarily disable problematic users
+- Seasonal access control
+- Project-based access management
 
 ---
 
@@ -622,9 +718,46 @@ TestSpec Studio is an AI-powered test case generation platform that transforms u
 
 ---
 
-## Recent Updates (v1.2.0)
+## Recent Updates
 
-### January 2025 - Enterprise Admin Features
+### v1.3.0 (January 2025) - Product Access Control
+
+**New Features**:
+1. ✅ **Product Access Control System**
+   - Admin can grant/revoke workspace access per user
+   - Granular control over who can use the product
+   - Perfect for trials, licenses, and staged rollouts
+
+2. ✅ **Product Info Page**
+   - Comprehensive product information for users without access
+   - Feature showcase and use cases
+   - Clear call-to-action to request access
+
+3. ✅ **Access Management UI**
+   - Visual access status indicators (enabled/disabled)
+   - One-click grant/revoke buttons in admin panel
+   - Real-time access control enforcement
+
+4. ✅ **Smart Navigation**
+   - "Workspace" link for users with access
+   - "Get Access" link for users without access
+   - Automatic redirection to product info page
+
+**Database Changes**:
+- Added `product_access` table
+- Tracks access grants/revokes with timestamps
+- Records which admin performed actions
+- Optimized indexes for fast lookups
+
+**Admin Enhancements**:
+- New access control buttons in user details
+- Access status badge with color coding
+- Activity logging for GRANT_ACCESS and REVOKE_ACCESS
+- Integrated into existing admin workflow
+
+---
+
+### v1.2.0 (January 2025) - Enterprise Admin Features
 
 **New Features**:
 1. ✅ User search functionality (by email and user ID)

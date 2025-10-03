@@ -1,18 +1,21 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { checkIsAdmin } from '../services/adminService'
+import { checkIsAdmin, checkProductAccess } from '../services/adminService'
 
 export default function AppLayout({ children }) {
   const { user, signOut } = useAuth()
   const location = useLocation()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [hasProductAccess, setHasProductAccess] = useState(false)
 
   useEffect(() => {
     if (user) {
       checkIsAdmin().then(setIsAdmin)
+      checkProductAccess(user.id).then(setHasProductAccess)
     } else {
       setIsAdmin(false)
+      setHasProductAccess(false)
     }
   }, [user])
 
@@ -40,9 +43,15 @@ export default function AppLayout({ children }) {
               </Link>
               {user ? (
                 <>
-                  <Link to="/workspace" className="text-gray-300 hover:text-neon-purple transition">
-                    Workspace
-                  </Link>
+                  {hasProductAccess ? (
+                    <Link to="/workspace" className="text-gray-300 hover:text-neon-purple transition">
+                      Workspace
+                    </Link>
+                  ) : (
+                    <Link to="/product-info" className="text-orange-300 hover:text-orange-200 transition">
+                      Get Access
+                    </Link>
+                  )}
                   <Link to="/account" className="text-gray-300 hover:text-neon-purple transition">
                     Account
                   </Link>

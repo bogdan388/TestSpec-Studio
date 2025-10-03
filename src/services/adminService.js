@@ -166,7 +166,16 @@ export const getUsersDetailed = async (searchQuery = '', filterStatus = 'all') =
       .select('user_id, last_active')
       .order('last_active', { ascending: false })
 
+    // Get product access status
+    const { data: productAccess } = await supabase
+      .from('product_access')
+      .select('user_id, has_access')
+
     const bannedUserIds = new Set(bannedUsers?.map(u => u.user_id) || [])
+    const productAccessMap = {}
+    productAccess?.forEach(pa => {
+      productAccessMap[pa.user_id] = pa.has_access
+    })
 
     // Build user stats
     const userStats = {}
@@ -184,7 +193,8 @@ export const getUsersDetailed = async (searchQuery = '', filterStatus = 'all') =
         lastActive: profile.last_sign_in,
         isBanned: bannedUserIds.has(profile.user_id),
         banReason: bannedUsers?.find(u => u.user_id === profile.user_id)?.reason,
-        bannedAt: bannedUsers?.find(u => u.user_id === profile.user_id)?.banned_at
+        bannedAt: bannedUsers?.find(u => u.user_id === profile.user_id)?.banned_at,
+        hasProductAccess: productAccessMap[profile.user_id] || false
       }
     })
 
@@ -398,5 +408,84 @@ export const deleteUserData = async (userId) => {
   } catch (error) {
     console.error('Error deleting user data:', error)
     return { success: false, error: error.message }
+  }
+}
+
+// Grant product access to user
+export const grantProductAccess = async (userId) => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+    const { error } = await supabase
+      .from('product_access')
+      .upsert({
+        user_id: userId,
+        has_access: true,
+        granted_at: new Date().toISOString(),
+        granted_by: currentUser.id,
+        revoked_at: null,
+        revoked_by: null
+      }, {
+        onConflict: 'user_id'
+      })
+
+    if (error) throw error
+
+    // Log activity
+    await logAdminActivity('GRANT_ACCESS', userId)
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error granting product access:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Revoke product access from user
+export const revokeProductAccess = async (userId) => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+    const { error } = await supabase
+      .from('product_access')
+      .upsert({
+        user_id: userId,
+        has_access: false,
+        revoked_at: new Date().toISOString(),
+        revoked_by: currentUser.id
+      }, {
+        onConflict: 'user_id'
+      })
+
+    if (error) throw error
+
+    // Log activity
+    await logAdminActivity('REVOKE_ACCESS', userId)
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error revoking product access:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Check if user has product access
+export const checkProductAccess = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('product_access')
+      .select('has_access')
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      // If no record exists, user doesn't have access
+      return false
+    }
+
+    return data?.has_access || false
+  } catch (error) {
+    console.error('Error checking product access:', error)
+    return false
   }
 }

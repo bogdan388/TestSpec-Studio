@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { useState, useEffect } from 'react'
+import { checkProductAccess } from './services/adminService'
 import AppLayout from './components/AppLayout'
 import LandingPage from './pages/LandingPage'
 import WorkspacePage from './pages/WorkspacePage'
@@ -8,6 +10,7 @@ import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import AccountPage from './pages/AccountPage'
 import AdminDashboard from './pages/AdminDashboardEnhanced'
+import ProductInfoPage from './pages/ProductInfoPage'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -23,6 +26,41 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" />
 }
 
+function ProductAccessRoute({ children }) {
+  const { user, loading } = useAuth()
+  const [hasAccess, setHasAccess] = useState(null)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (user) {
+        const access = await checkProductAccess(user.id)
+        setHasAccess(access)
+      }
+      setChecking(false)
+    }
+    checkAccess()
+  }, [user])
+
+  if (loading || checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+
+  if (!hasAccess) {
+    return <Navigate to="/product-info" />
+  }
+
+  return children
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -33,12 +71,13 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
+            <Route path="/product-info" element={<ProductInfoPage />} />
             <Route
               path="/workspace"
               element={
-                <ProtectedRoute>
+                <ProductAccessRoute>
                   <WorkspacePage />
-                </ProtectedRoute>
+                </ProductAccessRoute>
               }
             />
             <Route
