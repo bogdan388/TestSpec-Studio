@@ -19,8 +19,14 @@ export const ProductAccessProvider = ({ children }) => {
   const previousAccessRef = useRef(null)
 
   const recheckAccess = useCallback(async () => {
-    if (user) {
-      setChecking(true)
+    if (!user) {
+      setHasAccess(null)
+      setChecking(false)
+      previousAccessRef.current = null
+      return
+    }
+
+    try {
       const access = await checkProductAccess(user.id)
 
       // Check if access changed
@@ -35,11 +41,11 @@ export const ProductAccessProvider = ({ children }) => {
 
       previousAccessRef.current = access
       setHasAccess(access)
+    } catch (error) {
+      console.error('Error checking access:', error)
+      setHasAccess(false)
+    } finally {
       setChecking(false)
-    } else {
-      setHasAccess(null)
-      setChecking(false)
-      previousAccessRef.current = null
     }
   }, [user])
 

@@ -38,11 +38,11 @@ function ProductAccessRoute({ children }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" />
+    return <Navigate to="/login" replace />
   }
 
-  if (!hasAccess) {
-    return <Navigate to="/product-info" />
+  if (hasAccess === false) {
+    return <Navigate to="/product-info" replace />
   }
 
   return children
