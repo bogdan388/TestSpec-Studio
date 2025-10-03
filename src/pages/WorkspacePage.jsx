@@ -15,6 +15,7 @@ export default function WorkspacePage() {
   const [framework, setFramework] = useState('playwright')
   const [messages, setMessages] = useState([])
   const [viewMode, setViewMode] = useState('split') // 'chat', 'results', or 'split'
+  const [showHistorySidebar, setShowHistorySidebar] = useState(false)
   const historyRefreshRef = useRef(null)
 
   const handleSendMessage = async (userMessage) => {
@@ -167,6 +168,7 @@ export default function WorkspacePage() {
     setFramework('playwright')
     setViewMode('split')
     setError(null)
+    setShowHistorySidebar(false) // Close sidebar on mobile after selection
   }
 
   const handleSelectHistory = (historyItem) => {
@@ -182,12 +184,25 @@ export default function WorkspacePage() {
     setViewMode('split')
     setMessages([]) // Could load chat history here if stored
     setError(null)
+    setShowHistorySidebar(false) // Close sidebar on mobile after selection
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen">
-      {/* Mobile-friendly sidebar - hidden on mobile by default */}
-      <div className="hidden md:block">
+    <div className="flex flex-col md:flex-row h-screen relative">
+      {/* Mobile history sidebar overlay */}
+      {showHistorySidebar && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setShowHistorySidebar(false)}
+        />
+      )}
+
+      {/* History sidebar */}
+      <div className={`
+        fixed md:relative inset-y-0 left-0 z-50 md:z-0
+        transform transition-transform duration-300 ease-in-out
+        ${showHistorySidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         <HistorySidebar
           onSelectHistory={handleSelectHistory}
           currentHistoryId={currentHistoryId}
@@ -199,11 +214,24 @@ export default function WorkspacePage() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6 border-b border-purple-500/20">
           <div className="flex justify-between items-center gap-2">
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-white neon-text truncate">
-              🚀 Test Suite
-            </h1>
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              {/* Mobile history toggle button */}
+              <button
+                onClick={() => setShowHistorySidebar(!showHistorySidebar)}
+                className="md:hidden p-2 text-purple-400 hover:text-purple-300 flex-shrink-0"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-white neon-text truncate">
+                🚀 Test Suite
+              </h1>
+            </div>
+
             {results && (
-              <div className="flex space-x-1 sm:space-x-2">
+              <div className="flex space-x-1 sm:space-x-2 flex-shrink-0">
                 <button
                   onClick={() => setViewMode('split')}
                   className={`hidden lg:block px-3 sm:px-4 py-2 rounded-lg transition text-sm ${
