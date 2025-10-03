@@ -131,14 +131,172 @@ export const getAdminStats = async () => {
   }
 }
 
-// Delete user (super admin only)
-export const deleteUser = async (userId) => {
+// Get users with detailed info (including ban status)
+export const getUsersDetailed = async () => {
   try {
-    const { error } = await supabase.auth.admin.deleteUser(userId)
+    const { data: history, error } = await supabase
+      .from('test_history')
+      .select('user_id, created_at')
+      .order('created_at', { ascending: false })
+
     if (error) throw error
-    return true
+
+    // Get banned users
+    const { data: bannedUsers } = await supabase
+      .from('banned_users')
+      .select('user_id, reason')
+
+    const bannedUserIds = new Set(bannedUsers?.map(u => u.user_id) || [])
+
+    // Group by user and get stats
+    const userStats = {}
+    history.forEach(item => {
+      if (!userStats[item.user_id]) {
+        userStats[item.user_id] = {
+          id: item.user_id,
+          testCount: 0,
+          lastActive: item.created_at,
+          isBanned: bannedUserIds.has(item.user_id),
+          banReason: bannedUsers?.find(u => u.user_id === item.user_id)?.reason
+        }
+      }
+      userStats[item.user_id].testCount++
+    })
+
+    return Object.values(userStats)
   } catch (error) {
-    console.error('Error deleting user:', error)
-    return false
+    console.error('Error fetching detailed users:', error)
+    return []
+  }
+}
+
+// Get test history grouped by user
+export const getTestHistoryGroupedByUser = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('test_history')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    // Group by user_id
+    const grouped = {}
+    data.forEach(item => {
+      if (!grouped[item.user_id]) {
+        grouped[item.user_id] = []
+      }
+      grouped[item.user_id].push(item)
+    })
+
+    return grouped
+  } catch (error) {
+    console.error('Error fetching grouped test history:', error)
+    return {}
+  }
+}
+
+// Get sessions grouped by user
+export const getSessionsGroupedByUser = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('user_sessions')
+      .select('*')
+      .order('last_active', { ascending: false })
+
+    if (error) throw error
+
+    // Group by user_id
+    const grouped = {}
+    data.forEach(session => {
+      if (!grouped[session.user_id]) {
+        grouped[session.user_id] = []
+      }
+      grouped[session.user_id].push(session)
+    })
+
+    return grouped
+  } catch (error) {
+    console.error('Error fetching grouped sessions:', error)
+    return {}
+  }
+}
+
+// Ban/Disable user
+export const banUser = async (userId, reason) => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+    const { error } = await supabase
+      .from('banned_users')
+      .insert({
+        user_id: userId,
+        reason: reason || 'No reason provided',
+        banned_by: currentUser.id
+      })
+
+    if (error) throw error
+    return { success: true }
+  } catch (error) {
+    console.error('Error banning user:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Unban/Enable user
+export const unbanUser = async (userId) => {
+  try {
+    const { error } = await supabase
+      .from('banned_users')
+      .delete()
+      .eq('user_id', userId)
+
+    if (error) throw error
+    return { success: true }
+  } catch (error) {
+    console.error('Error unbanning user:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Send password reset email (using Supabase auth)
+export const sendPasswordReset = async (userId) => {
+  try {
+    // Log the password reset action
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+    await supabase
+      .from('admin_password_resets')
+      .insert({
+        user_id: userId,
+        reset_by: currentUser.id
+      })
+
+    return {
+      success: true,
+      message: 'Password reset recorded. User will need to use "Forgot Password" on login page.'
+    }
+  } catch (error) {
+    console.error('Error sending password reset:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Delete all user data
+export const deleteUserData = async (userId) => {
+  try {
+    // Delete test history
+    await supabase.from('test_history').delete().eq('user_id', userId)
+
+    // Delete sessions
+    await supabase.from('user_sessions').delete().eq('user_id', userId)
+
+    // Delete banned record if exists
+    await supabase.from('banned_users').delete().eq('user_id', userId)
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error deleting user data:', error)
+    return { success: false, error: error.message }
   }
 }

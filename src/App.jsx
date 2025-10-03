@@ -7,7 +7,7 @@ import LoginPage from './pages/LoginPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import AccountPage from './pages/AccountPage'
-import AdminDashboard from './pages/AdminDashboard'
+import AdminDashboard from './pages/AdminDashboardEnhanced'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
