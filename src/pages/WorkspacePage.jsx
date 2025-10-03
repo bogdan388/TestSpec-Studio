@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { historyService } from '../services/historyService'
 import ChatInterface from '../components/ChatInterface'
@@ -14,7 +14,8 @@ export default function WorkspacePage() {
   const [currentHistoryId, setCurrentHistoryId] = useState(null)
   const [framework, setFramework] = useState('playwright')
   const [messages, setMessages] = useState([])
-  const [viewMode, setViewMode] = useState('chat') // 'chat' or 'results'
+  const [viewMode, setViewMode] = useState('split') // 'chat', 'results', or 'split'
+  const historyRefreshRef = useRef(null)
 
   const handleSendMessage = async (userMessage) => {
     // Add user message to chat
@@ -23,6 +24,7 @@ export default function WorkspacePage() {
 
     setLoading(true)
     setError(null)
+    setViewMode('split') // Show both chat and results during generation
 
     try {
       const response = await fetch('/.netlify/functions/chat-generate-tests', {
@@ -49,20 +51,35 @@ export default function WorkspacePage() {
         testCount: data.manualTests.length
       }])
 
+      // Update results in real-time
       setResults(data)
-      setViewMode('results')
 
-      // Save to history
+      // Update or create chat session
       if (user) {
         try {
-          const historyItem = await historyService.saveToHistory(user.id, {
-            story: userMessage,
-            framework,
-            manualTests: data.manualTests,
-            automationSkeletons: data.automationSkeletons,
-            exports: data.exports,
-          })
-          setCurrentHistoryId(historyItem.id)
+          if (currentHistoryId) {
+            await historyService.updateChatSession(currentHistoryId, user.id, {
+              story: newMessages[0].content, // Use first user message as title
+              framework,
+              manualTests: data.manualTests,
+              automationSkeletons: data.automationSkeletons,
+              exports: data.exports,
+            })
+          } else {
+            const historyItem = await historyService.saveToHistory(user.id, {
+              story: userMessage,
+              framework,
+              manualTests: data.manualTests,
+              automationSkeletons: data.automationSkeletons,
+              exports: data.exports,
+              isChatSession: true,
+            })
+            setCurrentHistoryId(historyItem.id)
+          }
+          // Refresh sidebar
+          if (historyRefreshRef.current) {
+            historyRefreshRef.current()
+          }
         } catch (historyError) {
           console.error('Failed to save history:', historyError)
         }
@@ -87,6 +104,15 @@ export default function WorkspacePage() {
     }
   }
 
+  const handleNewChat = (newChat) => {
+    setCurrentHistoryId(newChat.id)
+    setMessages([])
+    setResults(null)
+    setFramework('playwright')
+    setViewMode('split')
+    setError(null)
+  }
+
   const handleSelectHistory = (historyItem) => {
     setCurrentHistoryId(historyItem.id)
     setFramework(historyItem.framework)
@@ -96,25 +122,38 @@ export default function WorkspacePage() {
       framework: historyItem.framework,
       exports: historyItem.exports,
     })
-    setViewMode('results')
+    setViewMode('split')
+    setMessages([]) // Could load chat history here if stored
     setError(null)
   }
 
   return (
-    <div className="flex">
+    <div className="flex h-screen">
       <HistorySidebar
         onSelectHistory={handleSelectHistory}
         currentHistoryId={currentHistoryId}
+        onNewChat={handleNewChat}
+        onRefresh={historyRefreshRef}
       />
 
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-white neon-text">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 border-b border-purple-500/20">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-white neon-text">
               🚀 Test Suite Generator
             </h1>
             {results && (
               <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode('split')}
+                  className={`px-4 py-2 rounded-lg transition ${
+                    viewMode === 'split'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-dark-700/50 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  ⚡ Split
+                </button>
                 <button
                   onClick={() => setViewMode('chat')}
                   className={`px-4 py-2 rounded-lg transition ${
@@ -138,11 +177,42 @@ export default function WorkspacePage() {
               </div>
             )}
           </div>
+        </div>
 
+        <div className="flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-4">
           {error && (
-            <div className="mb-6 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg backdrop-blur-md">
+            <div className="mb-4 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg backdrop-blur-md">
               <p className="font-semibold">Error:</p>
               <p>{error}</p>
+            </div>
+          )}
+
+          {viewMode === 'split' && (
+            <div className="grid grid-cols-2 gap-4 h-full">
+              <div className="overflow-hidden">
+                <ChatInterface
+                  messages={messages}
+                  onSendMessage={handleSendMessage}
+                  loading={loading}
+                  framework={framework}
+                  onFrameworkChange={handleFrameworkChange}
+                />
+              </div>
+              <div className="overflow-y-auto">
+                {results ? (
+                  <div>
+                    <ResultsTabs results={results} />
+                    <ExportButtons results={results} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">📋</div>
+                      <p>Results will appear here</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -157,7 +227,7 @@ export default function WorkspacePage() {
           )}
 
           {viewMode === 'results' && results && (
-            <div>
+            <div className="h-full overflow-y-auto">
               <ResultsTabs results={results} />
               <ExportButtons results={results} />
             </div>
