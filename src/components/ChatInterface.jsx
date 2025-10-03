@@ -140,7 +140,7 @@ export default function ChatInterface({
 
       {/* Input Form */}
       <form onSubmit={handleSubmit} className="bg-dark-800/60 backdrop-blur-md rounded-lg shadow-neon border border-purple-500/30 p-4">
-        <div className="flex space-x-4">
+        <div className="flex items-center space-x-4">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -153,7 +153,7 @@ export default function ChatInterface({
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg transition-all shadow-neon disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:shadow-none self-end"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg transition-all shadow-neon disabled:from-gray-600 disabled:to-gray-600 disabled:cursor-not-allowed disabled:shadow-none"
           >
             {loading ? '⚡ Generating...' : '🚀 Send'}
           </button>
