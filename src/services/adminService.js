@@ -41,24 +41,23 @@ export const checkIsSuperAdmin = async () => {
   }
 }
 
-// Get all users
+// Get all users (from test_history to get unique users)
 export const getAllUsers = async () => {
   try {
     const { data, error } = await supabase
-      .from('admin_users')
-      .select('*')
+      .from('test_history')
+      .select('user_id')
+      .order('created_at', { ascending: false })
 
-    if (error && error.code !== 'PGRST116') throw error
+    if (error) throw error
 
-    // Get all auth users (requires admin access)
-    const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers()
-
-    if (usersError) {
-      console.error('Cannot fetch users from admin API:', usersError)
-      return []
-    }
-
-    return users || []
+    // Get unique user IDs and count
+    const uniqueUsers = [...new Set(data.map(item => item.user_id))]
+    return uniqueUsers.map((id, index) => ({
+      id,
+      email: `User ${index + 1}`,
+      created_at: new Date().toISOString()
+    }))
   } catch (error) {
     console.error('Error fetching users:', error)
     return []
@@ -70,12 +69,7 @@ export const getAllTestHistory = async () => {
   try {
     const { data, error } = await supabase
       .from('test_history')
-      .select(`
-        *,
-        user:user_id (
-          email
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(100)
 
