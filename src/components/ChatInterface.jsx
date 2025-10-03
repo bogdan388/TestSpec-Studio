@@ -1,5 +1,27 @@
 import { useState, useRef, useEffect } from 'react'
 
+const loadingMessages = [
+  '🧠 Brainstorming test scenarios...',
+  '🔍 Analyzing edge cases...',
+  '🤔 Consulting the QA wisdom...',
+  '🎯 Targeting bugs before they exist...',
+  '🚀 Launching test generation sequence...',
+  '💡 Having an eureka moment...',
+  '🔮 Predicting potential failures...',
+  '🧪 Mixing the perfect test recipe...',
+  '🎨 Painting test scenarios with precision...',
+  '🏗️ Building your test fortress...',
+  '🕵️ Investigating all possibilities...',
+  '⚡ Channeling QA superpowers...',
+  '🎭 Crafting test case masterpieces...',
+  '🧩 Piecing together the test puzzle...',
+  '🎪 Orchestrating the test circus...',
+]
+
+function getLoadingMessage() {
+  return loadingMessages[Math.floor(Math.random() * loadingMessages.length)]
+}
+
 export default function ChatInterface({
   messages,
   onSendMessage,
@@ -128,7 +150,7 @@ export default function ChatInterface({
                 <div className="bg-dark-700/80 text-gray-200 border border-purple-500/20 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-                    <span>Thinking...</span>
+                    <span>{getLoadingMessage()}</span>
                   </div>
                 </div>
               </div>

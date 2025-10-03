@@ -1,6 +1,6 @@
 export default function ManualCaseCard({ test }) {
   return (
-    <div className="bg-dark-700/50 rounded-lg p-5 border border-purple-500/20 hover:border-purple-400/40 transition">
+    <div className="bg-dark-700/50 rounded-lg p-5 border border-purple-500/20 hover:border-purple-400/40 transition animate-slideIn">
       <h4 className="text-lg font-semibold text-white mb-3">
         {test.id}. {test.title}
       </h4>

@@ -34,15 +34,17 @@ export default function ResultsTabs({ results }) {
 
       <div className="p-6">
         {activeTab === 'manual' && (
-          <div className="space-y-4">
-            {results.manualTests?.map((test) => (
-              <ManualCaseCard key={test.id} test={test} />
+          <div className="space-y-4 animate-fadeIn">
+            {results.manualTests?.map((test, index) => (
+              <div key={test.id} style={{ animationDelay: `${index * 0.05}s` }}>
+                <ManualCaseCard test={test} />
+              </div>
             ))}
           </div>
         )}
 
         {activeTab === 'cucumber' && (
-          <div>
+          <div className="animate-fadeIn">
             <h3 className="text-lg font-semibold text-white mb-4">
               Cucumber/Gherkin Feature File
             </h3>
@@ -51,16 +53,25 @@ export default function ResultsTabs({ results }) {
         )}
 
         {activeTab === 'automation' && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-4">
-              {results.framework === 'playwright' ? 'Playwright' : results.framework.toUpperCase()} Test Skeletons
-            </h3>
-            <CodeBlock code={results.automationSkeletons} language="javascript" />
+          <div className="space-y-6 animate-fadeIn">
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                {results.framework === 'playwright' ? 'Playwright' : results.framework.toUpperCase()} Test Skeletons
+              </h3>
+              <CodeBlock code={results.automationSkeletons} language="javascript" />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-4">
+                Cucumber/Gherkin Feature File
+              </h3>
+              <CodeBlock code={results.cucumber || results.exports?.cucumber} language="gherkin" />
+            </div>
           </div>
         )}
 
         {activeTab === 'preview' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fadeIn">
             <div>
               <h3 className="text-lg font-semibold text-white mb-3">Markdown Preview</h3>
               <div className="bg-dark-700/50 rounded-lg p-4 border border-purple-500/20 overflow-auto max-h-96">
