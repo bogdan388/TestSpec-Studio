@@ -66,7 +66,10 @@ export default function ChatInterface({
         <select
           id="framework"
           value={framework}
-          onChange={(e) => onFrameworkChange(e.target.value)}
+          onChange={(e) => {
+            console.log('ChatInterface: Framework select changed to:', e.target.value)
+            onFrameworkChange(e.target.value)
+          }}
           className="w-full px-4 py-2 bg-dark-700/50 border border-purple-500/30 text-white rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           disabled={loading}
         >

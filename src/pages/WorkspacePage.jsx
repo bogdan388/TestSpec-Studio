@@ -95,12 +95,68 @@ export default function WorkspacePage() {
     }
   }
 
-  const handleFrameworkChange = (newFramework) => {
+  const handleFrameworkChange = async (newFramework) => {
+    console.log('Framework changed to:', newFramework)
     setFramework(newFramework)
-    if (results) {
+    if (results && results.manualTests) {
+      console.log('Regenerating automation for framework:', newFramework)
+      console.log('Current manual tests:', results.manualTests)
       // Regenerate automation skeletons for new framework
-      // This would need backend support - for now just update state
-      setResults({ ...results, framework: newFramework })
+      try {
+        const response = await fetch('/.netlify/functions/regenerate-automation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            manualTests: results.manualTests,
+            framework: newFramework
+          }),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Server error:', errorText)
+          throw new Error(`Failed to regenerate automation skeleton: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('Received new automation data:', data)
+
+        // Update results with new automation skeletons and cucumber
+        setResults({
+          ...results,
+          framework: newFramework,
+          automationSkeletons: data.automationSkeletons,
+          cucumber: data.cucumber,
+          exports: {
+            ...results.exports,
+            cucumber: data.cucumber
+          }
+        })
+
+        console.log('Results updated successfully')
+
+        // Update database if there's a current session
+        if (user && currentHistoryId) {
+          await historyService.updateChatSession(currentHistoryId, user.id, {
+            story: results.manualTests[0]?.title || 'Chat Session',
+            framework: newFramework,
+            manualTests: results.manualTests,
+            automationSkeletons: data.automationSkeletons,
+            exports: {
+              ...results.exports,
+              cucumber: data.cucumber
+            },
+          })
+          console.log('Database updated successfully')
+        }
+      } catch (err) {
+        console.error('Failed to regenerate automation:', err)
+        setError(`Failed to regenerate automation skeleton: ${err.message}`)
+      }
+    } else {
+      console.log('No results or manual tests available')
     }
   }
 
@@ -120,6 +176,7 @@ export default function WorkspacePage() {
       manualTests: historyItem.manual_tests,
       automationSkeletons: historyItem.automation_skeletons,
       framework: historyItem.framework,
+      cucumber: historyItem.exports?.cucumber || historyItem.cucumber,
       exports: historyItem.exports,
     })
     setViewMode('split')

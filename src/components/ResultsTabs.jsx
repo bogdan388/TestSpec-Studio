@@ -2,6 +2,29 @@ import { useState } from 'react'
 import ManualCaseCard from './ManualCaseCard'
 import CodeBlock from './CodeBlock'
 
+function getLanguageForFramework(framework) {
+  const languageMap = {
+    'playwright': 'javascript',
+    'cypress': 'javascript',
+    'jest': 'javascript',
+    'mocha': 'javascript',
+    'jasmine': 'javascript',
+    'pytest': 'python',
+    'selenium-python': 'python',
+    'selenium-java': 'java',
+    'junit': 'java',
+    'testng': 'java',
+    'nunit': 'csharp',
+    'xunit': 'csharp',
+    'selenium-csharp': 'csharp',
+    'rspec': 'ruby',
+    'capybara': 'ruby',
+    'rest-assured': 'java',
+    'postman': 'json'
+  }
+  return languageMap[framework] || 'javascript'
+}
+
 export default function ResultsTabs({ results }) {
   const [activeTab, setActiveTab] = useState('manual')
 
@@ -53,19 +76,27 @@ export default function ResultsTabs({ results }) {
         )}
 
         {activeTab === 'automation' && (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-6 animate-fadeIn" key={results.framework}>
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">
                 {results.framework === 'playwright' ? 'Playwright' : results.framework.toUpperCase()} Test Skeletons
               </h3>
-              <CodeBlock code={results.automationSkeletons} language="javascript" />
+              <CodeBlock
+                code={results.automationSkeletons}
+                language={getLanguageForFramework(results.framework)}
+                key={`automation-${results.framework}`}
+              />
             </div>
 
             <div>
               <h3 className="text-lg font-semibold text-white mb-4">
                 Cucumber/Gherkin Feature File
               </h3>
-              <CodeBlock code={results.cucumber || results.exports?.cucumber} language="gherkin" />
+              <CodeBlock
+                code={results.cucumber || results.exports?.cucumber}
+                language="gherkin"
+                key={`cucumber-${results.framework}`}
+              />
             </div>
           </div>
         )}
