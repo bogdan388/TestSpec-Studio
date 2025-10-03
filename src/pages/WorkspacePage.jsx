@@ -7,11 +7,13 @@ export default function WorkspacePage() {
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [streamingTests, setStreamingTests] = useState([])
 
   const handleGenerate = async (story, framework) => {
     setLoading(true)
     setError(null)
     setResults(null)
+    setStreamingTests([])
 
     try {
       const response = await fetch('/.netlify/functions/generate-tests', {
@@ -27,6 +29,15 @@ export default function WorkspacePage() {
       }
 
       const data = await response.json()
+
+      // Simulate streaming by displaying tests one by one
+      if (data.manualTests && data.manualTests.length > 0) {
+        for (let i = 0; i < data.manualTests.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 300))
+          setStreamingTests(prev => [...prev, data.manualTests[i]])
+        }
+      }
+
       setResults(data)
     } catch (err) {
       setError(err.message)
@@ -48,14 +59,57 @@ export default function WorkspacePage() {
         </div>
       )}
 
-      {loading && (
+      {loading && streamingTests.length === 0 && (
         <div className="mt-8 text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="mt-4 text-gray-600">Generating test suite...</p>
         </div>
       )}
 
-      {results && (
+      {streamingTests.length > 0 && (
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Generated Test Cases {loading && '(Loading...)'}
+            </h3>
+            <div className="space-y-4">
+              {streamingTests.map((test, index) => (
+                <div
+                  key={test.id}
+                  className="bg-gray-50 rounded-lg p-5 border border-gray-200 animate-fadeIn"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                    {test.id}. {test.title}
+                  </h4>
+                  <div className="mb-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Steps:</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      {test.steps.map((step, idx) => (
+                        <li key={idx} className="text-gray-600 text-sm">
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-1">Expected Result:</p>
+                    <p className="text-gray-600 text-sm">{test.expected}</p>
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="text-center py-4">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <p className="mt-2 text-sm text-gray-600">Loading more tests...</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {results && !loading && (
         <div className="mt-8">
           <ResultsTabs results={results} />
           <ExportButtons results={results} />
