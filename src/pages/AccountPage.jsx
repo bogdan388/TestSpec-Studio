@@ -19,17 +19,26 @@ export default function AccountPage() {
 
   const loadSessions = async () => {
     try {
-      const { data, error } = await supabase.auth.admin.getUserById(user.id)
+      const { data: { session }, error } = await supabase.auth.getSession()
       if (error) throw error
-      // Note: Session data is limited in client-side, this is a placeholder
+
+      if (session) {
+        setSessions([{
+          id: session.access_token.substring(0, 10),
+          device: navigator.userAgent,
+          lastActive: new Date().toISOString(),
+          current: true
+        }])
+      }
+    } catch (error) {
+      console.error('Error loading sessions:', error)
+      // Fallback to basic info if session fetch fails
       setSessions([{
         id: 'current',
         device: navigator.userAgent,
         lastActive: new Date().toISOString(),
         current: true
       }])
-    } catch (error) {
-      console.error('Error loading sessions:', error)
     }
   }
 
