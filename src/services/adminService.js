@@ -131,39 +131,90 @@ export const getAdminStats = async () => {
   }
 }
 
-// Get users with detailed info (including ban status)
-export const getUsersDetailed = async () => {
+// Get users with detailed info (including ban status, email, etc.)
+export const getUsersDetailed = async (searchQuery = '', filterStatus = 'all') => {
   try {
-    const { data: history, error } = await supabase
+    // Get user profiles (emails)
+    let profileQuery = supabase
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    // Apply search filter
+    if (searchQuery) {
+      profileQuery = profileQuery.or(`email.ilike.%${searchQuery}%,user_id.ilike.%${searchQuery}%`)
+    }
+
+    const { data: profiles, error: profileError } = await profileQuery
+
+    if (profileError) throw profileError
+
+    // Get test history for each user
+    const { data: history } = await supabase
       .from('test_history')
       .select('user_id, created_at')
       .order('created_at', { ascending: false })
 
-    if (error) throw error
-
     // Get banned users
     const { data: bannedUsers } = await supabase
       .from('banned_users')
-      .select('user_id, reason')
+      .select('user_id, reason, banned_at')
+
+    // Get sessions for active users
+    const { data: sessions } = await supabase
+      .from('user_sessions')
+      .select('user_id, last_active')
+      .order('last_active', { ascending: false })
 
     const bannedUserIds = new Set(bannedUsers?.map(u => u.user_id) || [])
 
-    // Group by user and get stats
+    // Build user stats
     const userStats = {}
-    history.forEach(item => {
-      if (!userStats[item.user_id]) {
-        userStats[item.user_id] = {
-          id: item.user_id,
-          testCount: 0,
-          lastActive: item.created_at,
-          isBanned: bannedUserIds.has(item.user_id),
-          banReason: bannedUsers?.find(u => u.user_id === item.user_id)?.reason
-        }
+
+    // Add profile data
+    profiles?.forEach(profile => {
+      userStats[profile.user_id] = {
+        id: profile.user_id,
+        email: profile.email,
+        createdAt: profile.created_at,
+        lastSignIn: profile.last_sign_in,
+        provider: profile.provider,
+        testCount: 0,
+        sessionCount: 0,
+        lastActive: profile.last_sign_in,
+        isBanned: bannedUserIds.has(profile.user_id),
+        banReason: bannedUsers?.find(u => u.user_id === profile.user_id)?.reason,
+        bannedAt: bannedUsers?.find(u => u.user_id === profile.user_id)?.banned_at
       }
-      userStats[item.user_id].testCount++
     })
 
-    return Object.values(userStats)
+    // Add test counts
+    history?.forEach(item => {
+      if (userStats[item.user_id]) {
+        userStats[item.user_id].testCount++
+        if (!userStats[item.user_id].lastActive || new Date(item.created_at) > new Date(userStats[item.user_id].lastActive)) {
+          userStats[item.user_id].lastActive = item.created_at
+        }
+      }
+    })
+
+    // Add session counts
+    sessions?.forEach(session => {
+      if (userStats[session.user_id]) {
+        userStats[session.user_id].sessionCount++
+      }
+    })
+
+    let users = Object.values(userStats)
+
+    // Apply status filter
+    if (filterStatus === 'active') {
+      users = users.filter(u => !u.isBanned)
+    } else if (filterStatus === 'banned') {
+      users = users.filter(u => u.isBanned)
+    }
+
+    return users
   } catch (error) {
     console.error('Error fetching detailed users:', error)
     return []
@@ -222,6 +273,39 @@ export const getSessionsGroupedByUser = async () => {
   }
 }
 
+// Log admin activity
+const logAdminActivity = async (action, targetUserId, details = {}) => {
+  try {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+
+    await supabase.from('admin_activity_log').insert({
+      admin_id: currentUser.id,
+      action,
+      target_user_id: targetUserId,
+      details
+    })
+  } catch (error) {
+    console.error('Error logging admin activity:', error)
+  }
+}
+
+// Get admin activity logs
+export const getAdminActivityLogs = async (limit = 50) => {
+  try {
+    const { data, error } = await supabase
+      .from('admin_activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error fetching activity logs:', error)
+    return []
+  }
+}
+
 // Ban/Disable user
 export const banUser = async (userId, reason) => {
   try {
@@ -236,6 +320,10 @@ export const banUser = async (userId, reason) => {
       })
 
     if (error) throw error
+
+    // Log activity
+    await logAdminActivity('BAN_USER', userId, { reason })
+
     return { success: true }
   } catch (error) {
     console.error('Error banning user:', error)
@@ -252,6 +340,10 @@ export const unbanUser = async (userId) => {
       .eq('user_id', userId)
 
     if (error) throw error
+
+    // Log activity
+    await logAdminActivity('UNBAN_USER', userId)
+
     return { success: true }
   } catch (error) {
     console.error('Error unbanning user:', error)
@@ -271,6 +363,9 @@ export const sendPasswordReset = async (userId) => {
         user_id: userId,
         reset_by: currentUser.id
       })
+
+    // Log activity
+    await logAdminActivity('PASSWORD_RESET', userId)
 
     return {
       success: true,
@@ -293,6 +388,11 @@ export const deleteUserData = async (userId) => {
 
     // Delete banned record if exists
     await supabase.from('banned_users').delete().eq('user_id', userId)
+
+    // Log activity
+    await logAdminActivity('DELETE_USER_DATA', userId, {
+      deleted: ['test_history', 'user_sessions', 'banned_users']
+    })
 
     return { success: true }
   } catch (error) {
