@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useProductAccess } from '../contexts/ProductAccessContext'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -7,41 +7,56 @@ export default function AccessStatusBanner() {
   const { hasAccess } = useProductAccess()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [showBanner, setShowBanner] = useState(false)
   const [bannerType, setBannerType] = useState(null) // 'granted' or 'revoked'
+  const previousAccessRef = useRef(hasAccess)
 
   useEffect(() => {
-    // Only show banner if user is logged in and on workspace/account pages
+    // Only track changes if user is logged in
     if (!user) {
       setShowBanner(false)
+      previousAccessRef.current = hasAccess
       return
     }
 
-    const currentPath = window.location.pathname
+    const currentPath = location.pathname
 
-    // If access is false and user is not on product-info page, they're being redirected
-    if (hasAccess === false && currentPath !== '/product-info' && currentPath !== '/login') {
-      setBannerType('revoked')
-      setShowBanner(true)
-
-      // Auto-hide and redirect after 2 seconds
-      setTimeout(() => {
-        setShowBanner(false)
-        navigate('/product-info')
-      }, 2000)
+    // Don't show banner on home page, login, or public pages
+    const publicPages = ['/', '/login', '/privacy', '/terms', '/product-info']
+    if (publicPages.includes(currentPath)) {
+      previousAccessRef.current = hasAccess
+      return
     }
 
-    // If access is true and they just got access
-    if (hasAccess === true && currentPath === '/product-info') {
-      setBannerType('granted')
-      setShowBanner(true)
+    // Detect LIVE access change (not initial load)
+    if (previousAccessRef.current !== null && previousAccessRef.current !== hasAccess) {
+      // Access just changed in real-time
+      if (hasAccess === false) {
+        // Access was just revoked while user was on the page
+        setBannerType('revoked')
+        setShowBanner(true)
 
-      // Auto-hide after 3 seconds
-      setTimeout(() => {
-        setShowBanner(false)
-      }, 3000)
+        // Auto-hide and redirect after 2 seconds
+        setTimeout(() => {
+          setShowBanner(false)
+          navigate('/product-info')
+        }, 2000)
+      } else if (hasAccess === true) {
+        // Access was just granted
+        setBannerType('granted')
+        setShowBanner(true)
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          setShowBanner(false)
+        }, 3000)
+      }
     }
-  }, [hasAccess, user, navigate])
+
+    // Update previous access reference
+    previousAccessRef.current = hasAccess
+  }, [hasAccess, user, navigate, location.pathname])
 
   if (!showBanner) return null
 
