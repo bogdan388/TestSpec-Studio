@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { trackSession, updateSessionActivity } from '../services/sessionService'
 
 const AuthContext = createContext({})
 
@@ -20,16 +21,37 @@ export const AuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setLoading(false)
+
+      // Track session if user is logged in
+      if (session?.user && session?.access_token) {
+        trackSession(session.user.id, session.access_token)
+      }
     })
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
+
+      // Track session on sign in
+      if (session?.user && session?.access_token) {
+        await trackSession(session.user.id, session.access_token)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    // Update session activity every 5 minutes
+    const activityInterval = setInterval(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        updateSessionActivity(session.access_token)
+      }
+    }, 5 * 60 * 1000) // 5 minutes
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(activityInterval)
+    }
   }, [])
 
   const signInWithGoogle = async () => {
