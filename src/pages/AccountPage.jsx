@@ -6,6 +6,7 @@ import { getUserSessions, deleteSession } from '../services/sessionService'
 export default function AccountPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [sessionsLoading, setSessionsLoading] = useState(true)
   const [sessions, setSessions] = useState([])
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [newPassword, setNewPassword] = useState('')
@@ -13,12 +14,13 @@ export default function AccountPage() {
   const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadSessions()
     }
-  }, [user])
+  }, [user?.id])
 
   const loadSessions = async () => {
+    setSessionsLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const currentToken = session?.access_token
@@ -37,6 +39,8 @@ export default function AccountPage() {
       setSessions(sessionsWithCurrent)
     } catch (error) {
       console.error('Error loading sessions:', error)
+    } finally {
+      setSessionsLoading(false)
     }
   }
 
@@ -206,7 +210,11 @@ export default function AccountPage() {
       {/* Connected Devices/Sessions */}
       <div className="bg-dark-800/60 backdrop-blur-md rounded-lg shadow-neon border border-purple-500/30 p-6">
         <h2 className="text-2xl font-semibold text-white mb-4">💻 Connected Devices</h2>
-        {sessions.length === 0 ? (
+        {sessionsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+          </div>
+        ) : sessions.length === 0 ? (
           <p className="text-gray-400 text-sm">No active sessions found.</p>
         ) : (
           <div className="space-y-3">
