@@ -19,8 +19,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check active sessions
     const initAuth = async () => {
+      console.log('Initializing auth...')
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+        console.log('Calling getSession...')
+        const result = await supabase.auth.getSession()
+        console.log('getSession result:', result)
+
+        const { data: { session }, error } = result
 
         if (error) {
           console.error('Auth error:', error)
