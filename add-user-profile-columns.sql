@@ -1,7 +1,8 @@
 -- Add missing columns to user_profiles table
 ALTER TABLE public.user_profiles
 ADD COLUMN IF NOT EXISTS full_name TEXT,
-ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ADD COLUMN IF NOT EXISTS avatar_url TEXT,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- Now run the safe sync trigger setup
 -- Create safe sync function that handles errors gracefully
