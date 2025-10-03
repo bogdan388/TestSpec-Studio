@@ -22,7 +22,14 @@ export const AuthProvider = ({ children }) => {
       console.log('Initializing auth...')
       try {
         console.log('Calling getSession...')
-        const result = await supabase.auth.getSession()
+
+        // Add timeout to prevent infinite hanging
+        const getSessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('getSession timeout')), 5000)
+        )
+
+        const result = await Promise.race([getSessionPromise, timeoutPromise])
         console.log('getSession result:', result)
 
         const { data: { session }, error } = result
@@ -38,11 +45,13 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user ?? null)
         setLoading(false)
 
-        // Track session if user is logged in (non-blocking)
+        // Track session AFTER auth is initialized (delayed to avoid blocking)
         if (session?.user && session?.access_token) {
-          trackSession(session.user.id, session.access_token).catch(err => {
-            console.error('Session tracking error:', err)
-          })
+          setTimeout(() => {
+            trackSession(session.user.id, session.access_token).catch(err => {
+              console.error('Session tracking error:', err)
+            })
+          }, 1000)
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
@@ -56,16 +65,17 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event)
       setUser(session?.user ?? null)
 
-      // Track session on sign in (non-blocking)
-      if (session?.user && session?.access_token) {
-        try {
-          await trackSession(session.user.id, session.access_token)
-        } catch (error) {
-          console.error('Session tracking error:', error)
-        }
+      // Track session on SIGN_IN event only (delayed to avoid blocking)
+      if (event === 'SIGNED_IN' && session?.user && session?.access_token) {
+        setTimeout(() => {
+          trackSession(session.user.id, session.access_token).catch(error => {
+            console.error('Session tracking error:', error)
+          })
+        }, 1000)
       }
     })
 
